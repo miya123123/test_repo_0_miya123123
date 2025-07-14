@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Chain Battle - 2画面対戦パズル</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .game-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .player-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .player-info {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .player-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .score {
+            font-size: 18px;
+            color: #FFD700;
+        }
+        
+        .game-canvas {
+            border: 3px solid #fff;
+            border-radius: 10px;
+            background: #000;
+            cursor: crosshair;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .special-attack {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 5px;
+        }
+        
+        .special-attack:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        .special-attack:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .game-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .timer {
+            font-size: 36px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+        
+        .vs-text {
+            font-size: 48px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin: 0 30px;
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .game-over-content {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .chain-effect {
+            position: absolute;
+            pointer-events: none;
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD700;
+            z-index: 100;
+            animation: chainAnimation 1s ease-out;
+        }
+        
+        @keyframes chainAnimation {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.5) translateY(-30px);
+            }
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #ccc;
+            text-align: center;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="player-area">
+            <div class="player-info">
+                <div class="player-name">Player 1</div>
+                <div class="score">Score: <span id="score1">0</span></div>
+            </div>
+            <canvas id="canvas1" class="game-canvas" width="300" height="400"></canvas>
+            <div class="controls">
+                <button class="special-attack" id="attack1" onclick="launchSpecialAttack(1)">🌟 Special Attack</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <div class="game-info">
+                <div class="timer" id="timer">3:00</div>
+                <button class="start-button" id="startButton" onclick="startGame()">Game Start</button>
+            </div>
+            <div class="vs-text">VS</div>
+            <div class="instructions">
+                同じ色のブロックを3つ以上つなげてクリックしてチェーンを作ろう！<br>
+                チェーンが長いほど高得点！特殊攻撃で相手を妨害しよう！
+            </div>
+        </div>
+        
+        <div class="player-area">
+            <div class="player-info">
+                <div class="player-name">Player 2</div>
+                <div class="score">Score: <span id="score2">0</span></div>
+            </div>
+            <canvas id="canvas2" class="game-canvas" width="300" height="400"></canvas>
+            <div class="controls">
+                <button class="special-attack" id="attack2" onclick="launchSpecialAttack(2)">🌟 Special Attack</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 id="gameOverText">Game Over!</h2>
+            <p id="winnerText"></p>
+            <button class="start-button" onclick="resetGame()">New Game</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
